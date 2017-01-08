@@ -1,3 +1,17 @@
+///////////////////////////////////////////////////////////////////////////////
+/// @name Graph
+/// @group Graph
+///
+/// @note This graph can be interacted with by either vertex and edge pointers
+///       or with vertex and edge descriptors. Using the pointers interface is
+///       default. To use the descriptor interface:
+///           #define DESCRIPTOR_GRAPH
+///       before including the graph header file.
+///
+///       All of the algorithms interfaces are the same; however, instead of
+///       taking a vertex or edge pointer a descriptor is taken.
+//
+///////////////////////////////////////////////////////////////////////////////
 #ifndef GRAPH_H
 #define GRAPH_H
 #include <cstdio>
@@ -57,13 +71,15 @@ namespace nostd {
       /// @}
       /// @name Graph Manipulation
       /// @{
-#ifdef DESCRIPTOR_GRAPH 
+#ifdef DESCRIPTOR_GRAPH
       vertex_iterator find_vertex(vertex_descriptor _vert) {
-        return this->m_vertex.find(_vert);
+        vertex temp = vertex(VertProp(), _vert);
+        return m_vertex.find(&temp);
       }
 
       const_vertex_iterator find_vertex(vertex_descriptor _vert) const {
-        return this->m_vertex.find(_vert);
+        vertex temp = vertex(VertProp(), _vert);
+        return m_vertex.find(&temp);
       }
 
       edge_iterator find_edge(vertex_descriptor _source, vertex_descriptor _target) {
@@ -85,7 +101,7 @@ namespace nostd {
         return find_edge(_edge.first, _edge.second);
       }
 
-      vertex* insert_vertex(const VertProp& _prop) {
+      vertex_descriptor insert_vertex(const VertProp& _prop) {
         vertex* temp = new vertex(_prop, m_count);
         m_vertex.insert(temp);
         return m_count++;
@@ -118,12 +134,14 @@ namespace nostd {
         auto out_iter = (*vert)->out_begin();
 
         for(; in_iter != (*vert)->in_end(); ++in_iter) {
-          (*in_iter)->source()->remove_edge(*in_iter);
+          auto iter = find_edge(*in_iter);
+          (*iter)->source()->remove_edge(*in_iter);
           m_edge.erase(*in_iter);
         }
 
         for(;out_iter != (*vert)->out_end(); ++out_iter) {
-          (*out_iter)->target()->remove_edge(*out_iter);
+          auto iter = find_edge(*out_iter);
+          (*iter)->target()->remove_edge(*out_iter);
           m_edge.erase(*out_iter);
         }
         m_vertex.erase(vert);
@@ -140,14 +158,12 @@ namespace nostd {
       }
 
 #else 
-      vertex_iterator find_vertex(vertex_descriptor _vert) {
-        vertex temp = vertex(VertProp(), _vert);
-        return m_vertex.find(&temp);
+      vertex_iterator find_vertex(vertex* _vert) {
+        return m_vertex.find(_vert);
       }
 
       const_vertex_iterator find_vertex(vertex* _vert) const {
-        vertex temp = vertex(VertProp(), _vert);
-        return m_vertex.find(&vert);
+        return m_vertex.find(_vert);
       }
 
       edge_iterator find_edge(vertex* _source, vertex* _target) {
@@ -174,24 +190,23 @@ namespace nostd {
         return temp;
       }
 
-      edge* insert_edge(vertex_descriptor _source, vertex_descriptor _target, 
+      edge* insert_edge(vertex* _source, vertex* _target, 
           const EdgeProp& _prop) {
-        auto source = find_vertex(_source);
-        auto target = find_vertex(_target);
+
         edge* temp = new edge(_source, _target, _prop);
         this->m_edge.insert(temp);
-        (*source)->add_outedge(temp->descriptor());
-        (*target)->add_inedge(temp->descriptor());
+        _source->add_outedge(temp);
+        _target->add_inedge(temp);
         return temp;
       }
 
-      void insert_undirected(vertex_descriptor _source, vertex_descriptor _target, 
+      void insert_undirected(vertex* _source, vertex* _target, 
           const EdgeProp& _prop) {
         insert_edge(_source, _target, _prop);
         insert_edge(_target, _source, _prop);
       }
       
-      void erase_vertex(vertex_descriptor _vert) {
+      void erase_vertex(vertex* _vert) {
         auto in_iter = _vert->in_begin();
         auto out_iter = _vert->out_begin();
         for(; in_iter != _vert->in_end(); ++in_iter) {
@@ -206,14 +221,12 @@ namespace nostd {
         m_vertex.erase(_vert);
       }
       
-      void erase_edge(edge_descriptor _edge) {
+      void erase_edge(edge* _edge) {
 
-        auto source = find_vertex(_edge.first);
-        auto target = find_vertex(_edge.second);
-        (*source)->remove_edge(_edge);
-        (*source)->remove_edge(_edge);
+        _edge->source()->remove_edge(_edge);
+        _edge->target()->remove_edge(_edge);
         
-        m_edge.erase();
+        m_edge.erase(_edge);
       }
 #endif     
       /// @}
@@ -252,7 +265,7 @@ namespace nostd {
         public:
           /// @name constructors
           /// @{
- #ifdef DESCRIPTOR_GRAPH       
+#ifdef DESCRIPTOR_GRAPH       
           vertex(const VertProp& _prop = VertProp(), 
                  vertex_descriptor _desc = INVALID_VERTEX):
                  m_property(_prop), m_descriptor(_desc) {}
