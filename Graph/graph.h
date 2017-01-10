@@ -10,7 +10,7 @@
 ///
 ///       All of the algorithms interfaces are the same; however, instead of
 ///       taking a vertex or edge pointer a descriptor is taken.
-//
+///
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef GRAPH_H
 #define GRAPH_H
@@ -30,19 +30,21 @@ namespace nostd {
       /////////////////////////////////////////////////////////////////////////
       /// @name Graph Typedefs
       /// @{
-      //
       typedef typename std::set<vertex*>::iterator vertex_iterator;
       typedef typename std::set<edge*>::iterator edge_iterator;    
       
       typedef typename std::set<vertex*>::const_iterator const_vertex_iterator;
       typedef typename std::set<edge*>::const_iterator const_edge_iterator;    
 
+      typedef VertProp vertex_type;
+      typedef EdgeProp edge_type;
+
 #ifdef DESCRIPTOR_GRAPH
       typedef size_t vertex_descriptor;
       typedef std::pair<vertex_descriptor, vertex_descriptor> edge_descriptor;
       static const vertex_descriptor INVALID_VERTEX = size_t(-1);
 
-      static vertex_descriptor get_opposite(edge_descriptor _edge, 
+      static inline vertex_descriptor get_opposite(edge_descriptor _edge, 
                                             vertex_descriptor _vert) {
         if(_edge.first == _vert)
           return _edge.second;
